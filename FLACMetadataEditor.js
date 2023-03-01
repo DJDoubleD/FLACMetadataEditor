@@ -9,7 +9,7 @@
 // @grant       none
 // ==/UserScript==
 
-const FLACMetadataEditor = (()=>{
+var FLACMetadataEditor = (()=>{
     'use strict';
 
     const _version = '0.0.2.1';
@@ -47,6 +47,8 @@ const FLACMetadataEditor = (()=>{
             this.blockSize = 0;
             this.data = new FLACMetadataBlockData();
             this.offset = 0;
+			this.data.comments = new VorbisCommentPacket();
+			this.data.vendorString = '';
         }
         get serializedSize() {
             switch (this.blockType) {
@@ -89,6 +91,20 @@ const FLACMetadataEditor = (()=>{
             };
 
             this._parseMetadata();
+			
+			if (!this._vorbisComment) {
+				// Create empty VORBIS_COMMENT block if not present in file
+				const newBlock = new FLACMetadataBlock();
+				newBlock.blockTypeNubmer = 4;
+				newBlock.blockType = 'VORBIS_COMMENT';
+
+				const bl = this.metadata.blocks;
+				let index = bl.length;
+				if (bl[bl.length-1].blockType === 'PADDING') index--;
+
+				bl.splice(index, 0, newBlock);
+				this.metadata.blocks = bl;
+			}
 
             return this;
         }
